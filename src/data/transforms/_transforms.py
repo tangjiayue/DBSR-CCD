@@ -1,8 +1,3 @@
-"""
-Copied from RT-DETR (https://github.com/lyuwenyu/RT-DETR)
-Copyright(c) 2023 lyuwenyu. All Rights Reserved.
-"""
-
 from typing import Any, Dict, List, Optional
 
 import PIL
@@ -95,7 +90,6 @@ class EmptyTransform(T.Transform):
     def forward(self, *inputs):
         inputs = inputs if len(inputs) > 1 else inputs[0]
         return inputs
-
 
 @register()
 class PadToSize(T.Pad):

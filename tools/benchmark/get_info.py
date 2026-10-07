@@ -1,7 +1,3 @@
-"""
-Copyright (c) 2024 The D-FINE Authors. All Rights Reserved.
-"""
-
 import os
 import sys
 
@@ -53,7 +49,7 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", "-c", default="configs/dfine/dfine_hgnetv2_l_coco.yml", type=str
+        "--config", "-c", default="configs/dbsr/dbsr_hgnetv2_l_coco.yml", type=str
     )
     args = parser.parse_args()
 

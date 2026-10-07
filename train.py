@@ -1,19 +1,6 @@
-"""
-D-FINE: Redefine Regression Task of DETRs as Fine-grained Distribution Refinement
-Copyright (c) 2024 The D-FINE Authors. All Rights Reserved.
----------------------------------------------------------------------------------
-Modified from RT-DETR (https://github.com/lyuwenyu/RT-DETR)
-Copyright (c) 2023 lyuwenyu. All Rights Reserved.
-"""
-
 import os
-# 限制多进程初始化方式，防止僵尸进程
-os.environ['NCCL_P2P_DISABLE'] = '1' 
-# 强制每个进程只看自己的卡，减少干扰
-os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import sys
 import torch
-
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 import argparse
@@ -63,13 +50,6 @@ def main(args) -> None:
 
     cfg = YAMLConfig(args.config, **update_dict)
 
-    if cfg.grpo_finetune:
-        if hasattr(cfg, "output_dir") and cfg.output_dir is not None:
-            cfg.output_dir = os.path.join(cfg.output_dir, "grpo_finetune")
-        elif "output_dir" in cfg.yaml_cfg:
-            cfg.yaml_cfg["output_dir"] = os.path.join(
-                cfg.yaml_cfg["output_dir"], "grpo_finetune"
-            )
 
     if args.resume or args.tuning:
         if "HGNetv2" in cfg.yaml_cfg:
@@ -81,9 +61,7 @@ def main(args) -> None:
 
     solver = TASKS[cfg.yaml_cfg["task"]](cfg)
 
-    if cfg.pretrain_vpe:
-        solver.pretrain()
-    elif args.test_only:
+    if args.test_only:
         solver.val()
     else:
         solver.fit()

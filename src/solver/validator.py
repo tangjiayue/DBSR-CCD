@@ -3,7 +3,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from loguru import logger
@@ -228,6 +227,12 @@ class Validator:
         print("=" * 25 + "\n")
 
     def save_plots(self, path_to_save) -> None:
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            logger.warning(f"Skipping validator plots: {exc}")
+            return
+
         path_to_save = Path(path_to_save)
         path_to_save.mkdir(parents=True, exist_ok=True)
 

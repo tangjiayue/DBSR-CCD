@@ -1,8 +1,3 @@
-"""
-Copied from RT-DETR (https://github.com/lyuwenyu/RT-DETR)
-Copyright(c) 2023 lyuwenyu. All Rights Reserved.
-"""
-
 import copy
 import os
 from typing import Any, Dict, List, Optional
@@ -97,10 +92,10 @@ def merge_config(cfg, another_cfg=GLOBAL_CONFIG, inplace: bool = False, overwrit
 
     Example:
 
-        cfg1 = load_config('./dfine_r18vd_6x_coco.yml')
+        cfg1 = load_config('./dbsr_r18vd_6x_coco.yml')
         cfg1 = merge_config(cfg, inplace=True)
 
-        cfg2 = load_config('./dfine_r50vd_6x_coco.yml')
+        cfg2 = load_config('./dbsr_r50vd_6x_coco.yml')
         cfg2 = merge_config(cfg2, inplace=True)
 
         model1 = create(cfg1['model'], cfg1)

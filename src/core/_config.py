@@ -1,8 +1,3 @@
-"""
-Copied from RT-DETR (https://github.com/lyuwenyu/RT-DETR)
-Copyright(c) 2023 lyuwenyu. All Rights Reserved.
-"""
-
 from pathlib import Path
 from typing import Callable, Dict, List
 
@@ -73,16 +68,6 @@ class BaseConfig(object):
         self.output_dir: str = None
         self.summary_dir: str = None
         self.device: str = ""
-
-        self.pretrain_vpe: bool = False
-        self.grpo_cls: bool = False
-        
-        self.grpo_finetune: bool = False
-        self.grpo_advantage_weight: float = 0.01
-        self.grpo_beta: float = 0.04
-        self.grpo_num_mute: int = 300
-        self.epsilon: float = 0.000000001
-        self.iou_pro_reward: bool = False
 
 
 

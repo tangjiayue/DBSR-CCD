@@ -1,9 +1,3 @@
-"""
-copy and modified https://github.com/pytorch/vision/blob/main/references/detection/coco_utils.py
-
-Copyright(c) 2023 lyuwenyu. All Rights Reserved.
-"""
-
 import faster_coco_eval.core.mask as coco_mask
 import torch
 import torch.utils.data

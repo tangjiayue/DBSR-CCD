@@ -1,7 +1,3 @@
-"""
-Copyright (c) 2024 The D-FINE Authors. All Rights Reserved.
-"""
-
 import collections
 import contextlib
 import os

@@ -5,7 +5,7 @@
 int main(){
     try{
         ov::Core core;
-        ov::CompiledModel mCompiledModel = core.compile_model("DFINE.onnx","AUTO");
+        ov::CompiledModel mCompiledModel = core.compile_model("DBSR.onnx","AUTO");
         cv::Mat imageMat = cv::imread("test.png");
         cv::cvtColor(imageMat, imageMat, cv::COLOR_BGR2RGB);
         cv::Mat inferMat;

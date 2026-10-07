@@ -59,9 +59,9 @@ ask_save_logs
 
 # Set config file and output directory based on selection
 if [ "$TASK" = "coco" ]; then
-    CONFIG_FILE="configs/dfine/dfine_hgnetv2_${MODEL_SIZE}_${TASK}.yml"
+    CONFIG_FILE="configs/dbsr/dbsr_hgnetv2_${MODEL_SIZE}_${TASK}.yml"
 else
-    CONFIG_FILE="configs/dfine/objects365/dfine_hgnetv2_${MODEL_SIZE}_${TASK}.yml"
+    CONFIG_FILE="configs/dbsr/objects365/dbsr_hgnetv2_${MODEL_SIZE}_${TASK}.yml"
 fi
 
 OUTPUT_DIR="output/${MODEL_SIZE}_${TASK}"

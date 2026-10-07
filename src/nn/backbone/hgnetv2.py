@@ -2,7 +2,7 @@
 reference
 - https://github.com/PaddlePaddle/PaddleDetection/blob/develop/ppdet/modeling/backbones/hgnet_v2.py
 
-Copyright (c) 2024 The D-FINE Authors. All Rights Reserved.
+Copyright (c) 2024 The DBSR Authors. All Rights Reserved.
 """
 
 import logging
@@ -13,6 +13,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ...core import register
+
+
+
 from .common import FrozenBatchNorm2d
 
 # Constants for initialization
@@ -364,7 +367,6 @@ class HGNetv2(nn.Module):
                 "stage3": [256, 64, 512, 2, True, True, 5, 3],
                 "stage4": [512, 128, 1024, 1, True, True, 5, 3],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B0_stage1.pth",
         },
         "B1": {
             "stem_channels": [3, 24, 32],
@@ -375,7 +377,6 @@ class HGNetv2(nn.Module):
                 "stage3": [256, 96, 512, 2, True, True, 5, 3],
                 "stage4": [512, 192, 1024, 1, True, True, 5, 3],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B1_stage1.pth",
         },
         "B2": {
             "stem_channels": [3, 24, 32],
@@ -386,7 +387,6 @@ class HGNetv2(nn.Module):
                 "stage3": [384, 128, 768, 3, True, True, 5, 4],
                 "stage4": [768, 256, 1536, 1, True, True, 5, 4],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B2_stage1.pth",
         },
         "B3": {
             "stem_channels": [3, 24, 32],
@@ -397,7 +397,6 @@ class HGNetv2(nn.Module):
                 "stage3": [512, 128, 1024, 3, True, True, 5, 5],
                 "stage4": [1024, 256, 2048, 1, True, True, 5, 5],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B3_stage1.pth",
         },
         "B4": {
             "stem_channels": [3, 32, 48],
@@ -408,7 +407,6 @@ class HGNetv2(nn.Module):
                 "stage3": [512, 192, 1024, 3, True, True, 5, 6],
                 "stage4": [1024, 384, 2048, 1, True, True, 5, 6],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B4_stage1.pth",
         },
         "B5": {
             "stem_channels": [3, 32, 64],
@@ -419,7 +417,6 @@ class HGNetv2(nn.Module):
                 "stage3": [512, 256, 1024, 5, True, True, 5, 6],
                 "stage4": [1024, 512, 2048, 2, True, True, 5, 6],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B5_stage1.pth",
         },
         "B6": {
             "stem_channels": [3, 48, 96],
@@ -430,7 +427,6 @@ class HGNetv2(nn.Module):
                 "stage3": [512, 384, 1024, 6, True, True, 5, 6],
                 "stage4": [1024, 768, 2048, 3, True, True, 5, 6],
             },
-            "url": "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B6_stage1.pth",
         },
     }
 
@@ -451,7 +447,6 @@ class HGNetv2(nn.Module):
 
         stem_channels = self.arch_configs[name]["stem_channels"]
         stage_config = self.arch_configs[name]["stage_config"]
-        download_url = self.arch_configs[name]["url"]
 
         self._out_strides = [4, 8, 16, 32]
         self._out_channels = [stage_config[k][2] for k in stage_config]
@@ -501,59 +496,28 @@ class HGNetv2(nn.Module):
             self._freeze_norm(self)
 
         if pretrained:
-            RED, GREEN, RESET = "\033[91m", "\033[92m", "\033[0m"
+            model_path = os.path.join(
+                local_model_dir, f"PPHGNetV2_{name}_stage1.pth"
+            )
             try:
-                # If the file doesn't exist locally, download from the URL
-                if safe_get_rank() == 0:
-                    print(
-                        GREEN
-                        + "If the pretrained HGNetV2 can't be downloaded automatically. Please check your network connection."
-                        + RESET
+                if safe_get_rank() == 0 and not os.path.isfile(model_path):
+                    raise FileNotFoundError(
+                        f"Missing local HGNetV2 pretrained weight: {model_path}"
                     )
-                    print(
-                        GREEN
-                        + "Please check your network connection. Or download the model manually from "
-                        + RESET
-                        + f"{download_url}"
-                        + GREEN
-                        + " to "
-                        + RESET
-                        + f"{local_model_dir}."
-                        + RESET
-                    )
-                    state = torch.hub.load_state_dict_from_url(
-                        download_url, map_location="cpu", model_dir=local_model_dir
-                    )
-                    print(f"Loaded stage1 {name} HGNetV2 from URL.")
-
-                # Wait for rank 0 to download the model
                 safe_barrier()
-
-                # All processes load the downloaded model
-                model_path = local_model_dir + "PPHGNetV2_" + name + "_stage1.pth"
+                if not os.path.isfile(model_path):
+                    raise FileNotFoundError(
+                        f"Missing local HGNetV2 pretrained weight: {model_path}"
+                    )
                 state = torch.load(model_path, map_location="cpu")
-
                 self.load_state_dict(state)
-                print(f"Loaded stage1 {name} HGNetV2 from URL.")
-
+                print(f"Loaded stage1 {name} HGNetV2 from local file.")
             except (Exception, KeyboardInterrupt) as e:
                 if safe_get_rank() == 0:
-                    print(f"{str(e)}")
-                    logging.error(
-                        RED + "CRITICAL WARNING: Failed to load pretrained HGNetV2 model" + RESET
-                    )
-                    logging.error(
-                        GREEN
-                        + "Please check your network connection. Or download the model manually from "
-                        + RESET
-                        + f"{download_url}"
-                        + GREEN
-                        + " to "
-                        + RESET
-                        + f"{local_model_dir}."
-                        + RESET
-                    )
-                exit()
+                    logging.error(f"Failed to load local HGNetV2 model: {e}")
+                raise RuntimeError(
+                    f"Unable to load local HGNetV2 pretrained weight: {model_path}"
+                ) from e
 
     def _freeze_norm(self, m: nn.Module):
         if isinstance(m, nn.BatchNorm2d):

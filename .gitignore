@@ -1,2 +1,6 @@
+docs/
 output/
 weight/
+__pycache__/
+*.py[cod]
+.DS_Store

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0146 OLD)   # for disabling FindCUDA warning
-project(DFineTRT)
+project(DBSRTRT)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,7 +16,7 @@ find_package(CUDA REQUIRED)
 # tensorrt
 set(CUDA_RUNTIME_API_DIRS "/usr/local/cuda-12.9/targets/x86_64-linux/include")
 
-# dfine
+# dbsr
 add_executable(trtExample trtExample.cpp)
 target_compile_options(trtExample PRIVATE
     -Wall
