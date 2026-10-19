@@ -25,6 +25,8 @@ class VisualClassifier(nn.Module):
     def __init__(self, matcher, weight_dict, num_classes=10, hidden_dim=256, alpha=0.2, gamma=2.0,
             text_feats_path="/root/userfolder/Dataset/ObjectDetection/ComparisonDetectorDataset/pubmed_text11_new_feats.pt",
             num_decoder_layers=6,
+            num_tokens=8,
+            quality_score_weight=1.0,
             ):
         super().__init__()
         self.weight_dict = weight_dict
@@ -33,8 +35,10 @@ class VisualClassifier(nn.Module):
         self.gamma = gamma
         self.matcher = matcher
         self.num_decoder_layers = max(1, int(num_decoder_layers))
+        self.num_tokens = int(num_tokens)
+        self.quality_score_weight = float(quality_score_weight)
 
-        self.vpe = VisualPromptEncoder(hidden_dim=hidden_dim, num_levels=3, depth=1, return_intermediate=True) 
+        self.vpe = VisualPromptEncoder(hidden_dim=hidden_dim, num_levels=3, depth=1, return_intermediate=True, num_tokens=self.num_tokens) 
         self.cls_head = ClassificationHead(hidden_dim, num_classes)
         self.cls_head_aux = ClassificationHead(hidden_dim, num_classes)
         self.aux_cls_head = nn.Linear(hidden_dim, num_classes)
@@ -58,7 +62,7 @@ class VisualClassifier(nn.Module):
     def forward(self, feats, outputs, targets=None):
         #========开始
         pred_boxes = outputs['pred_boxes'] # [B, 300, 4] (cxcywh)
-        quality_scores = outputs['quality_score'] # [B, 300, 1]
+        quality_scores = self.quality_score_weight * outputs['quality_score'] # [B, 300, 1]
         query_feats = outputs["output"] # [B, N, C] D-FINE 解码器输出的 query 特征
         decoder_query_feats = outputs.get("decoder_query_feats")
         if decoder_query_feats is None:
@@ -117,7 +121,6 @@ class VisualClassifier(nn.Module):
                 pred_boxes=pred_boxes,
                 targets=targets,
                 pos_threshold=0.6,
-                neg_threshold=0.5,
             )
 
             #=======================构造正样本的 Labels 和 IoUs===================
@@ -150,7 +153,6 @@ class VisualClassifier(nn.Module):
                     pred_boxes=pred_boxes,
                     targets=targets,
                     pos_threshold=0.6,
-                    neg_threshold=0.5,
                 )
                 flatten_labels_aux = torch.full((B, N), -1, dtype=torch.long, device=device)
                 flatten_ious_aux = torch.zeros((B, N), device=device)
@@ -287,7 +289,7 @@ class VisualClassifier(nn.Module):
 
             }
             
-            # outputs['pred_logits'] = refined_logits
+            outputs['pred_logits'] = refined_logits
             return {
                 "matched_vpe_logits": flatten_vpe_logits,
                 "aux_cls_logits": aux_cls_logits.reshape(-1, aux_cls_logits.shape[-1]),
@@ -783,7 +785,7 @@ class VisualPromptEncoderBlock(nn.Module):
     单个 Visual Prompt Encoder Block
     包含：Cross-Attention + Self-Attention + FFN
     """
-    def __init__(self, hidden_dim=256, num_heads=8, num_levels=3, num_points=6, ffn_dim=1024):
+    def __init__(self, hidden_dim=256, num_heads=8, num_levels=3, num_points=6, ffn_dim=1024, num_tokens=8):
         super().__init__()
         
         # Cross-Attention
@@ -803,7 +805,7 @@ class VisualPromptEncoderBlock(nn.Module):
         self.differential_attn = DifferentialBoxAttention(
             hidden_dim=hidden_dim,
             num_heads=num_heads,
-            num_tokens=8,
+            num_tokens=num_tokens,
             dropout=0.1,
         )
         
@@ -865,7 +867,7 @@ class VisualPromptEncoder(nn.Module):
     基于 multi-scale 注意力提取预测框特征，支持多层深度
     """
     def __init__(self, hidden_dim=256, num_heads=8, num_levels=3, num_points=6, 
-                 ffn_dim=1024, depth=1, return_intermediate=False):  # 新增 depth 参数
+                 ffn_dim=1024, depth=1, return_intermediate=False, num_tokens=8):  # 新增 depth 参数
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_levels = num_levels
@@ -894,7 +896,8 @@ class VisualPromptEncoder(nn.Module):
                 num_heads=num_heads,
                 num_levels=num_levels,
                 num_points=num_points,
-                ffn_dim=ffn_dim
+                ffn_dim=ffn_dim,
+                num_tokens=num_tokens
             )
             for _ in range(depth)
         ])

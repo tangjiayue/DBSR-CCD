@@ -36,11 +36,16 @@ def load_confidence_groups(path, iou_threshold=0.5):
         predictions = image_record.get("predictions", [])
         raw_predictions += len(predictions)
 
-        # Merge repeated top-K class entries with exactly the same predicted box.
-        # Keep the maximum class confidence as the query-level score.
+        # Postprocessor 的 top-k 是在 query×class 展平后取的；同一 query 可能出现多个类别。
+        # 优先使用保存的 query_index 聚合。如果旧结果没有 query_index，才退回到 bbox 聚合。
+        # bbox 聚合只是兼容旧 JSON 的近似，不能替代真正的 query_index。
         merged = {}
         for prediction in predictions:
-            key = tuple(float(value) for value in prediction["bbox"])
+            query_index = prediction.get("query_index", None)
+            if query_index is not None:
+                key = ("query", int(query_index))
+            else:
+                key = ("bbox", tuple(float(value) for value in prediction["bbox"]))
             current = merged.get(key)
             if current is None or float(prediction["score"]) > current["score"]:
                 merged[key] = {
@@ -95,6 +100,12 @@ def summary(values):
         "fraction_ge_0.5": float(np.mean(values >= 0.5)) if values.size else 0.0,
         "fraction_ge_0.1": float(np.mean(values >= 0.1)) if values.size else 0.0,
     }
+
+
+def tail_count_curve(values, x):
+    """绝对尾部数量 N(score >= x)，避免把密度高度误读成样本数量。"""
+    values = np.asarray(values, dtype=np.float64)
+    return np.asarray([(values >= threshold).sum() for threshold in x], dtype=np.float64)
 
 
 def draw_density_plot(dfine, dbsr, output):
@@ -166,12 +177,15 @@ def draw_density_plot(dfine, dbsr, output):
     )
 
     inset = ax.inset_axes([0.50, 0.56, 0.46, 0.38])
-    inset.plot(x_d[x_d >= 0.1], y_d[x_d >= 0.1], color=blue, lw=1.35)
-    inset.plot(x_r[x_r >= 0.1], y_r[x_r >= 0.1], color=red, lw=1.35)
+    tail_x = np.linspace(0.1, 1.0, 181)
+    tail_d = tail_count_curve(dfine["unmatched"], tail_x)
+    tail_r = tail_count_curve(dbsr["unmatched"], tail_x)
+    inset.plot(tail_x, tail_d, color=blue, lw=1.35)
+    inset.plot(tail_x, tail_r, color=red, lw=1.35)
     inset.set_yscale("log")
     inset.set_xlim(0.1, 1.0)
-    inset.set_ylim(1e-8, max(float(y_d.max()), float(y_r.max()), 1e-7))
-    inset.set_title("High-score tail (score ≥ 0.1)", fontsize=7.3, pad=2)
+    inset.set_ylim(0.8, max(float(tail_d.max()), float(tail_r.max()), 1.0) * 1.25)
+    inset.set_title("Absolute tail count N(score ≥ x)", fontsize=7.3, pad=2)
     inset.tick_params(axis="both", labelsize=6)
     inset.grid(True, which="both", alpha=0.2, linewidth=0.45)
     for spine in inset.spines.values():
@@ -197,7 +211,7 @@ def main():
     result = {
         "iou_threshold": 0.5,
         "matching": "class-agnostic, descending-score, one-to-one GT assignment",
-        "merge": "exact duplicate predicted boxes, retaining maximum class score",
+        "merge": "query_index grouping when available; bbox grouping fallback for legacy JSON",
         "dfine": {
             "path": str(args.dfine),
             "raw_predictions": dfine["raw_predictions"],

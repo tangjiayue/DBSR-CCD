@@ -43,6 +43,7 @@ def train_one_epoch(
 
     model.train()
     criterion.train()
+    # freeze_for_vpe_and_cls(model)
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", SmoothedValue(window_size=1, fmt="{value:.6f}"))
 
@@ -714,6 +715,44 @@ def evaluate(
 
     return stats, coco_evaluator
 
+def freeze_for_vpe_and_cls(model):
+    # 递归获取原始模型
+    root_m = unwrap_model(model)
+
+    # # 冻结所有参数
+    # for p in root_m.parameters():
+    #     p.requires_grad = False
+
+    # for name, module in root_m.named_modules():
+    #     if "VisualClassifier" in name:
+    #         continue
+            
+    #     if isinstance(module, (nn.BatchNorm2d, nn.SyncBatchNorm, nn.BatchNorm1d)):
+    #         module.eval()
+    #         module.training = False
+
+    # if hasattr(root_m, "feature_router"):
+    #     root_m.feature_router.train()
+    #     for p in root_m.feature_router.parameters():
+    #         p.requires_grad = True
+
+    # root_m.VisualClassifier.train()
+    # #  解冻 VPE 相关的参数 (包括分类头)
+    # for p in root_m.VisualClassifier.parameters():
+    #     p.requires_grad = True
+
+
+    # 只冻结 decoder
+    for name, p in root_m.named_parameters():
+        if name.startswith("decoder."):
+            p.requires_grad = False
+
+    # decoder 保持 eval，避免 BN / dropout 抖动
+    for name, module in root_m.named_modules():
+        if name.startswith("decoder"):
+            if isinstance(module, (nn.BatchNorm2d, nn.SyncBatchNorm, nn.BatchNorm1d)):
+                module.eval()
+                module.training = False
 
 def unwrap_model(model):
     if hasattr(model, "module"):

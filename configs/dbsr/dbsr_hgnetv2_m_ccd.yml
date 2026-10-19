@@ -6,7 +6,7 @@ __include__: [
   './include/dbsr_hgnetv2.yml',
 ]
 
-output_dir: output/dbsr_hgnetv2_m_ccd/6_3/14_self_attn/试一试
+output_dir: output/dbsr_hgnetv2_m_ccd/self_attn/加vpe加fusion
 
 
 DBSR:
@@ -26,6 +26,7 @@ DBSRTransformer:
 VisualClassifier:
   num_classes: 10
   num_decoder_layers: 4
+  num_tokens: 8
   text_feats_path: /root/userfolder/Dataset/ObjectDetection/TCT_JPEGImages/pubmed_text10_new_feats.pt
 
 HybridEncoder:

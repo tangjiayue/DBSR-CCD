@@ -63,7 +63,6 @@ class DetSolver(BaseSolver):
                 top1 = metric_value
                 print(f"best_stat ({best_metric_key}[{best_metric_index}]): {best_stat}")
 
-        # load_visual_classifier_from_model2(self.model, "/root/userfolder/Projects/RLCCD/output/dbsr_hgnetv2_m_ccd/6_1/37/best_stg1.pth", device=self.device)
 
         best_stat_print = best_stat.copy()
         start_time = time.time()

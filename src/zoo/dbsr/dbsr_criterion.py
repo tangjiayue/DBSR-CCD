@@ -186,6 +186,17 @@ class DBSRCriterion(nn.Module):
                     box_cxcywh_to_xyxy(outputs["pred_boxes"][idx]), box_cxcywh_to_xyxy(target_boxes)
                 )[0]
             )
+
+            weight_targets = ious.unsqueeze(-1).repeat(1, 1, 4).reshape(-1).detach()
+            losses["loss_fgl"] = self.unimodal_distribution_focal_loss(
+                pred_corners,
+                target_corners,
+                weight_right,
+                weight_left,
+                weight_targets,
+                avg_factor=num_boxes,
+            )
+
             if "teacher_corners" in outputs:
                 pred_corners = outputs["pred_corners"].reshape(-1, (self.reg_max + 1))
                 target_corners = outputs["teacher_corners"].reshape(-1, (self.reg_max + 1))

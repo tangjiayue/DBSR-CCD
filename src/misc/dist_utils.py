@@ -305,6 +305,17 @@ def save_detection_results(gt, preds, save_dir="./detection_results",
         pred_labels = pred_item["labels"].cpu().numpy() if hasattr(pred_item["labels"], 'cpu') else pred_item["labels"]
         pred_scores = pred_item["scores"].cpu().numpy() if hasattr(pred_item["scores"], 'cpu') else pred_item["scores"]
         
+        pred_query_indices = pred_item.get("query_index", None)
+        if pred_query_indices is not None:
+            if hasattr(pred_query_indices, "detach"):
+                pred_query_indices = pred_query_indices.detach().cpu().reshape(-1).tolist()
+            elif hasattr(pred_query_indices, "reshape"):
+                pred_query_indices = pred_query_indices.reshape(-1).tolist()
+            elif hasattr(pred_query_indices, "tolist"):
+                pred_query_indices = pred_query_indices.tolist()
+            if not isinstance(pred_query_indices, (list, tuple)):
+                pred_query_indices = [pred_query_indices]
+
         # 转换真实框信息
         gt_list = []
         for i, (box, label) in enumerate(zip(gt_boxes, gt_labels)):
@@ -318,8 +329,16 @@ def save_detection_results(gt, preds, save_dir="./detection_results",
         # 转换预测框信息
         pred_list = []
         for i, (box, label, score) in enumerate(zip(pred_boxes, pred_labels, pred_scores)):
+            query_index = None
+            if pred_query_indices is not None and i < len(pred_query_indices):
+                query_index = pred_query_indices[i]
+                if hasattr(query_index, "item"):
+                    query_index = query_index.item()
+                if query_index is not None:
+                    query_index = int(query_index)
             pred_info = {
                 "pred_id": i,
+                "query_index": query_index,
                 "bbox": box.tolist() if hasattr(box, 'tolist') else box,
                 "label": int(label),
                 "score": float(score)

@@ -6,7 +6,7 @@ __include__: [
   './include/dbsr_hgnetv2.yml',
 ]
 
-output_dir: output/dbsr_hgnetv2_m_cdetectord/self_attn/加vpe加fusion
+output_dir: output/dbsr_hgnetv2_m_cdetector/self_attn/加vpe加fusion/token8
 
 
 DBSR:
@@ -26,6 +26,7 @@ DBSRTransformer:
 VisualClassifier:
   num_classes: 11
   num_decoder_layers: 4
+  num_tokens: 8   # 1 4 8 16
   text_feats_path: /root/userfolder/Dataset/ObjectDetection/ComparisonDetectorDataset/pubmed_text11_new_feats.pt
 
 HybridEncoder:
@@ -61,14 +62,14 @@ optimizer:
 
 
 # epochs: 100 # Early stop
-epochs: 200
+epochs: 100
 train_dataloader:
   dataset:
     transforms:
       policy:
-        epoch: 500
+        epoch: 50
   collate_fn:
-    stop_epoch: 500
+    stop_epoch: 50
     base_size_repeat: 6
 
 checkpoint_freq: 2
